@@ -1,0 +1,34 @@
+﻿<Window x:Class="Ex.App.Dialogs.NewWeekDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New week" Width="440" SizeToContent="Height" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{DynamicResource Bg1}" Foreground="{DynamicResource Text}" FontFamily="{StaticResource UiFont}" FontSize="13"
+        ShowInTaskbar="False">
+    <StackPanel Margin="24,20">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <TextBlock Text="Week" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold"
+                       VerticalAlignment="Center" Margin="0,0,10,0" />
+            <TextBox x:Name="WeekText" Width="56" FontSize="20" FontWeight="SemiBold" HorizontalContentAlignment="Center"
+                     TextChanged="OnInputChanged" />
+        </StackPanel>
+
+        <TextBlock Text="TITLE" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+        <TextBox x:Name="TitleText" Margin="0,0,0,18" />
+
+        <StackPanel x:Name="RepoPanel" Visibility="Collapsed">
+            <TextBlock Text="PROJECT" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+            <ComboBox x:Name="RepoCombo" SelectionChanged="OnInputChanged" Margin="0,0,0,18" />
+        </StackPanel>
+
+        <TextBlock Text="START FROM" Style="{StaticResource Caption}" Margin="0,0,0,8" />
+        <RadioButton x:Name="ContinueRadio" GroupName="Start" Margin="0,0,0,8" />
+        <RadioButton x:Name="EmptyRadio" GroupName="Start" Content="An empty project" />
+        <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,14,0,22"
+                   Text="You will work on the week's solution. The start stays as it is now: that is what students get." />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" IsCancel="True" Margin="0,0,8,0" />
+            <Button Content="Create week" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="OnOk" />
+        </StackPanel>
+    </StackPanel>
+</Window>

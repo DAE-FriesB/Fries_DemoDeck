@@ -1,0 +1,260 @@
+<Window x:Class="Ex.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fries' Demo Deck" Width="1120" Height="780" MinWidth="780" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Bg0}" Foreground="{DynamicResource Text}"
+        FontFamily="{StaticResource UiFont}" FontSize="13">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Top bar -->
+        <DockPanel DockPanel.Dock="Top" Margin="24,16,24,8">
+            <Button x:Name="ModeButton" DockPanel.Dock="Right" Click="OnToggleMode" Margin="12,0,0,0" Visibility="Collapsed" />
+            <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource PillButton}" Margin="0,0,12,0"
+                    Background="{DynamicResource TealSoft}" Foreground="{DynamicResource Teal}" Click="OnUpdate" Visibility="Collapsed"
+                    ToolTip="A new version has been downloaded. Click to restart into it." />
+            <Button x:Name="OpenButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="OnOpenMenu">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Open course" />
+                    <Path Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.5"
+                          VerticalAlignment="Center" Margin="8,2,0,0" />
+                </StackPanel>
+            </Button>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="{StaticResource AppIcon}" Width="22" Height="22" Margin="0,0,10,0" VerticalAlignment="Center" />
+                <TextBlock Text="Fries' Demo Deck" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <Border x:Name="DemoBadge" Background="{DynamicResource Coral}" CornerRadius="6" Padding="10,3" Margin="12,0,0,0"
+                        VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="DEMO MODE" Foreground="{DynamicResource Ink}" FontSize="12" FontWeight="Bold" />
+                </Border>
+                <TextBlock x:Name="CourseText" Margin="14,1,0,0" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Status bar and the optional git log -->
+        <DockPanel DockPanel.Dock="Bottom" Margin="24,0,24,12">
+            <DockPanel DockPanel.Dock="Top">
+                <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Checked="OnLogToggle" Unchecked="OnLogToggle" />
+                <TextBlock x:Name="VersionText" DockPanel.Dock="Right" Foreground="{DynamicResource TextMuted}" FontSize="12"
+                           VerticalAlignment="Center" Margin="0,0,12,0" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="{DynamicResource Teal}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="StatusText" Text="Ready" Foreground="{DynamicResource TextMuted}" FontSize="12"
+                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                </StackPanel>
+            </DockPanel>
+            <Border x:Name="LogPanel" Visibility="Collapsed" Margin="0,8,0,0" Background="{DynamicResource Bg1}"
+                    BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="6">
+                <ListBox x:Name="LogList" Height="170" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                         SelectionMode="Extended" KeyDown="OnLogKeyDown">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Padding" Value="6,1" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </DockPanel>
+
+        <Grid x:Name="MainArea" Margin="24,8,24,12">
+            <!-- Nothing open yet -->
+            <StackPanel x:Name="NoCoursePanel" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                <Image Source="{StaticResource AppIcon}" Width="120" Height="120" HorizontalAlignment="Center" Margin="0,0,0,24" />
+                <TextBlock Text="Fries' Demo Deck" FontFamily="{StaticResource DisplayFont}" FontSize="28" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="No course open" Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                <TextBlock Style="{StaticResource Muted}" TextAlignment="Center" Margin="0,12,0,22"
+                           Text="Open the course folder: the folder with exercises.yaml and a Projects folder next to it." />
+                <Button Content="Open course folder" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Click="OnBrowseCourse" />
+            </StackPanel>
+
+            <!-- Course open, but no project yet -->
+            <StackPanel x:Name="NoProjectPanel" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420" Visibility="Collapsed">
+                <Grid Width="56" Height="56" HorizontalAlignment="Center" Margin="0,0,0,18">
+                    <Ellipse Fill="{DynamicResource SandSoft}" />
+                    <Ellipse Width="20" Height="20" Fill="{DynamicResource Sand}" />
+                </Grid>
+                <TextBlock Text="No project yet" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock x:Name="NoProjectText" Style="{StaticResource Muted}" TextAlignment="Center" Margin="0,8,0,20" />
+                <Button Content="Create project" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Click="OnCreateProject" />
+            </StackPanel>
+
+            <!-- Weeks + selected week -->
+            <Grid x:Name="CoursePanel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="270" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Sidebar -->
+                <Border Style="{StaticResource Panel}" Padding="10,14">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="8,0,2,10">
+                            <Button x:Name="NewWeekButton" DockPanel.Dock="Right" Style="{StaticResource RoundButton}" Click="OnNewWeek" ToolTip="New week">
+                                <Path Data="M5,0 L5,10 M0,5 L10,5" Stroke="{DynamicResource Ink}" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            </Button>
+                            <TextBlock Text="WEEKS" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <TextBlock x:Name="NoWeeksText" DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="8,4" Visibility="Collapsed"
+                                   Text="No weeks yet. Click + to create the first week." />
+                        <ListBox x:Name="WeekList" SelectionChanged="OnWeekSelected">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Medium" Margin="0,2,0,0"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Summary}" Foreground="{DynamicResource TextMuted}" FontSize="11" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <Ellipse Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource Teal}" VerticalAlignment="Center"
+                                                 Margin="8,0,2,0" ToolTip="You are working in this week"
+                                                 Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <!-- Selected week -->
+                <Grid Grid.Column="2">
+                    <TextBlock x:Name="NoWeekSelectedText" Text="Select a week" Style="{StaticResource Muted}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <ScrollViewer x:Name="WeekPanel" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                        <StackPanel Margin="12,0,8,0">
+                            <TextBlock x:Name="WeekNameText" Style="{StaticResource Caption}" Margin="0,6,0,0" />
+                            <TextBox x:Name="WeekTitleBox" Style="{StaticResource HeadingBox}" Margin="-11,2,0,0" LostFocus="OnWeekTextLostFocus"
+                                     ToolTip="Click to edit the title" />
+                            <TextBlock x:Name="WeekOriginText" Style="{StaticResource Muted}" Margin="0,2,0,0" />
+
+                            <!-- Work card: only while working on this week -->
+                            <Border x:Name="WorkPanel" Margin="0,20,0,0" CornerRadius="12" Padding="16,14" Visibility="Collapsed"
+                                    Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                <DockPanel>
+                                    <Button x:Name="SaveButton" DockPanel.Dock="Right" Content="Save" Style="{StaticResource PrimaryButton}"
+                                            MinWidth="96" VerticalAlignment="Center" Margin="8,0,0,0" Click="OnSave" />
+                                    <Button x:Name="PropagateButton" DockPanel.Dock="Right" Content="Propagate" VerticalAlignment="Center"
+                                            Margin="12,0,0,0" Click="OnPropagateCurrent" Visibility="Collapsed"
+                                            ToolTip="Carry the saves on this step forward into the later steps and the solution" />
+                                    <Grid DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,14,0" VerticalAlignment="Center">
+                                        <Ellipse x:Name="WorkDot" Fill="{DynamicResource Teal}" />
+                                    </Grid>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <WrapPanel>
+                                            <TextBlock x:Name="WorkText" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <Button x:Name="ChangesButton" Style="{StaticResource PillButton}" Click="OnShowChanges"
+                                                    ToolTip="Show the changed files" />
+                                            <TextBlock x:Name="AllSavedText" Text="Everything is saved" Foreground="{DynamicResource TextMuted}"
+                                                       VerticalAlignment="Center" />
+                                        </WrapPanel>
+                                        <TextBlock x:Name="WorkHint" Style="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0" />
+                                        <TextBlock x:Name="WorkWarning" Foreground="{DynamicResource Peach}" FontSize="12" Margin="0,6,0,0"
+                                                   TextWrapping="Wrap" Visibility="Collapsed" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Demo card: only in Demo mode -->
+                            <Border x:Name="DemoPanel" Margin="0,20,0,0" CornerRadius="12" Padding="16,14" Visibility="Collapsed"
+                                    Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="◀  Previous" Click="OnDemoPrevious" Margin="12,0,0,0" ToolTip="Previous step (PageUp)" />
+                                        <Button Content="Next  ▶" Style="{StaticResource PrimaryButton}" Click="OnDemoNext" Margin="8,0,0,0"
+                                                ToolTip="Next step (PageDown)" />
+                                        <Button Content="Reset step" Style="{StaticResource GhostButton}" Click="OnDemoReset" Margin="8,0,0,0"
+                                                ToolTip="Throw away everything done during the demo and go back to the start of this step" />
+                                    </StackPanel>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock x:Name="DemoText" FontSize="14" FontWeight="Medium" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DemoHint" Style="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <TextBlock Text="STEPS" Style="{StaticResource Caption}" Margin="0,26,0,10" />
+                            <ItemsControl x:Name="StepList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="36" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Timeline rail -->
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <Rectangle Width="2" Fill="{DynamicResource LineStrong}" HorizontalAlignment="Center"
+                                                           Visibility="{Binding HasLineAbove, Converter={StaticResource BoolToVisibility}}" />
+                                                <Grid Grid.Row="1" Width="20" Height="20">
+                                                    <Ellipse Fill="{Binding NodeSoft}" Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibility}}" />
+                                                    <Ellipse Width="12" Height="12" Fill="{Binding NodeBrush}" />
+                                                </Grid>
+                                                <Rectangle Grid.Row="2" Width="2" Fill="{DynamicResource LineStrong}" HorizontalAlignment="Center"
+                                                           Visibility="{Binding HasLineBelow, Converter={StaticResource BoolToVisibility}}" />
+                                            </Grid>
+                                            <!-- Card -->
+                                            <Border Grid.Column="1" Margin="4,4,0,4" Padding="16,12" CornerRadius="12" BorderThickness="1"
+                                                    Background="{Binding CardBrush}" BorderBrush="{DynamicResource Line}"
+                                                    Cursor="{Binding CardCursor}" MouseLeftButtonUp="OnStepCardClick">
+                                                <DockPanel MinHeight="32">
+                                                    <Button DockPanel.Dock="Right" Content="Open" VerticalAlignment="Center" Click="OnOpenStep"
+                                                            Visibility="{Binding ShowOpen, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="Check out this point of the week" />
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource PillButton}" Margin="0,0,10,0"
+                                                            Content="{Binding UnsyncedText}" Click="OnPropagateStep"
+                                                            Visibility="{Binding ShowUnsynced, Converter={StaticResource BoolToVisibility}}"
+                                                            ToolTip="These saves were made after a later step was created. Click to carry them forward (Propagate)." />
+                                                    <Border DockPanel.Dock="Right" VerticalAlignment="Center" CornerRadius="10" Padding="10,3"
+                                                            Background="{DynamicResource AccentSoft}"
+                                                            Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBlock Text="You are here" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="SemiBold" />
+                                                    </Border>
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="Medium" />
+                                                        <TextBlock Text="{Binding Caption}" Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock x:Name="NotWorkingText" Style="{StaticResource Muted}" Margin="42,8,0,0" Visibility="Collapsed"
+                                       Text="Open the solution to work on this week." />
+
+                            <TextBlock Text="NOTES" Style="{StaticResource Caption}" Margin="0,26,0,10" />
+                            <TextBox x:Name="WeekNotesBox" MinHeight="96" TextWrapping="Wrap" AcceptsReturn="True" Padding="8,8"
+                                     VerticalScrollBarVisibility="Auto" LostFocus="OnWeekTextLostFocus" Margin="0,0,0,12" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

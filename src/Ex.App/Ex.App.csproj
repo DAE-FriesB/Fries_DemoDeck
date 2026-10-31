@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ex.Core\Ex.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Generated from Themes/AppIcon.xaml by tools/IconGen. Windows without their own Icon use it too. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyTitle>Fries' Demo Deck</AssemblyTitle>
+    <Product>Fries' Demo Deck</Product>
+    <!-- Release builds pass the tag's version (-p:Version=...); this is the fallback for local builds. -->
+    <Version>0.1.0</Version>
+    <!-- Program.Main runs the Velopack hook before WPF starts (install/update/uninstall events). -->
+    <StartupObject>Ex.App.Program</StartupObject>
+    <Authors>FriesBoury</Authors>
+  </PropertyGroup>
+
+</Project>

@@ -8,6 +8,7 @@ Works with Unity projects as well as .NET (ASP.NET Core, console) projects.
 
 **[Walkthrough with screenshots](https://dae-friesb.github.io/Fries_DemoDeck/guide/)**: from an empty folder to a week
 with three demo steps, rebuilding a small MonoGame project commit by commit.
+**[Demo mode video](https://www.youtube.com/watch?v=ivMepVpuztI)**: jumping between those steps in class.
 
 ## Install
 

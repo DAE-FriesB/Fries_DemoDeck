@@ -4,11 +4,14 @@ A Windows desktop app for teachers who build programming exercises step by step 
 Each exercise lives in git: one branch per week (`weekNN/start` → `weekNN/solution`) and optional snapshot branches
 (`weekNN/step-N`) for the points you want to jump to during a lesson. No more copies of copies of projects.
 
-Works with Unity projects as well as .NET (ASP.NET Core, console) projects.
+Works with any project that can be versioned in git without Git LFS: Unity, MonoGame, .NET (ASP.NET Core, console),
+web projects, and so on. The app only runs git; it doesn't need to know how to build the project. Keep large binary
+assets small, because without LFS every version of them stays in the repository (the app warns about files over 5 MB),
+and give the project a proper `.gitignore` (see [Get the .gitignore right first](#get-the-gitignore-right-first)).
 
-**[Walkthrough with screenshots](https://dae-friesb.github.io/Fries_DemoDeck/guide/)**: from an empty folder to a week
-with three demo steps, rebuilding a small MonoGame project commit by commit.
-**[Demo mode video](https://www.youtube.com/watch?v=ivMepVpuztI)**: jumping between those steps in class.
+- **[Walkthrough with screenshots](https://dae-friesb.github.io/Fries_DemoDeck/guide/)**: from an empty folder to a
+  week with three demo steps, rebuilding a small MonoGame project commit by commit.
+- **[Demo mode video](https://www.youtube.com/watch?v=ivMepVpuztI)**: jumping between those steps in class.
 
 ## Install
 
@@ -21,7 +24,8 @@ Requires [Git for Windows](https://git-scm.com/download/win) on the PATH.
 1. **Open course** and choose a course folder: a folder with an `exercises.yaml` file and a `Projects\` folder next to
    it. The app offers to create both. Recent folders are remembered in `%APPDATA%\ExercisesPipeline\settings.json`.
 2. With no project yet, **Create project** makes a git repository in `Projects\` (README, `.gitignore`,
-   `.gitattributes` on `main`).
+   `.gitattributes` on `main`). The type (Unity or .NET) only picks the starting `.gitignore`; for any other kind of
+   project, pick either and replace the `.gitignore` with your own in the first week.
 3. **+** in the weeks list creates a week (`weekNN/start` + `weekNN/solution`), starting from the previous week's
    solution or an empty project, and opens its solution.
 4. Select a week to see its steps (Start, demo steps, Solution). **Open** checks out that point.
@@ -37,6 +41,22 @@ Requires [Git for Windows](https://git-scm.com/download/win) on the PATH.
 
 The app refreshes by itself when files or branches change (in Unity, an IDE or the command line).
 *Git log* at the bottom shows every git command that changes something.
+
+## Get the .gitignore right first
+
+The `.gitignore` decides what the app treats as your work, so set it up before the first save:
+
+- **Save stores every file that is not ignored.** Build output, caches and IDE files that are not in the `.gitignore`
+  end up in the history and keep showing up as unsaved changes (for example `bin/` and `obj/`, Unity's `Library/`
+  and `Temp/`, `.vs/`, `node_modules/`).
+- **Demo mode keeps ignored files.** A jump throws away everything you changed live, but leaves ignored files alone.
+  That is what keeps Unity's `Library/` or a project's `bin/` and `obj/` intact between steps, so nothing has to be
+  imported or rebuilt from scratch.
+- **Use a template for your tool.** The app writes one for Unity and one for .NET. For anything else, start from the
+  matching template in [github/gitignore](https://github.com/github/gitignore) (MonoGame projects can use
+  `VisualStudio.gitignore`, as in the walkthrough).
+- **Put it in the first commit of the first week**, so every branch has it. To change it later, commit the change on
+  the earliest branch and **Propagate** it forward like any other fix.
 
 ## Notes on behaviour
 

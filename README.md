@@ -6,6 +6,9 @@ Each exercise lives in git: one branch per week (`weekNN/start` → `weekNN/solu
 
 Works with Unity projects as well as .NET (ASP.NET Core, console) projects.
 
+**[Walkthrough with screenshots](https://dae-friesb.github.io/Fries_DemoDeck/guide/)**: from an empty folder to a week
+with three demo steps, rebuilding a small MonoGame project commit by commit.
+
 ## Install
 
 Download `FriesDemoDeck-win-Setup.exe` from the latest [release](../../releases) and run it. It installs per user

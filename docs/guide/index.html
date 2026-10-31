@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Step-by-step walkthrough of Fries' Demo Deck: connecting a course folder and building a week with demo steps.">
+<link rel="icon" href="shots/favicon.png">
+<style>html, body { margin: 0; } img { max-width: 100%; }</style>
+<title>Demo Deck Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a player, like a screen recording. Chapter list on the left, the frame with numbered highlights on the right,
+   the narration under the frame. Single dark theme on purpose: it is the app's own look. */
+:root {
+  --page: #13162b;        /* app background, one step darker */
+  --panel: #1c2040;       /* app panels */
+  --raised: #262b52;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.20);
+  --text: #eef0f7;
+  --text-2: #b3b8d3;
+  --muted: #8389ab;
+  --teal: #4ca5b0;
+  --sand: #f3ca81;
+  --peach: #f38e67;
+  --coral: #f65d53;
+  --ink: #212544;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--page); color: var(--text); font-family: var(--body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+/* ---- header ---- */
+header { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+header svg { flex: none; width: 56px; height: 56px; }
+.head-text { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { color: var(--text-2); margin: 0; max-width: 68ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.fact { font-size: 12.5px; color: var(--text-2); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; }
+.fact b { color: var(--text); font-weight: 600; }
+
+/* ---- player ---- */
+.player { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 960px) { .player { grid-template-columns: minmax(0, 1fr); } .chapters { order: 2; } }
+
+.chapters { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100vh - 32px); overflow: auto; }
+@media (max-width: 960px) { .chapters { position: static; max-height: none; } }
+.chapter { display: flex; flex-direction: column; gap: 2px; padding: 8px 8px 6px; border-radius: 10px; }
+.chapter.current { background: var(--raised); }
+.chapter-head { display: flex; gap: 10px; align-items: baseline; }
+.chapter-no { font-family: var(--mono); font-size: 12px; color: var(--sand); flex: none; }
+.chapter-title { font-weight: 600; font-size: 14px; }
+.chapter-source { font-size: 12px; color: var(--muted); padding-left: 24px; line-height: 1.4; }
+.chapter ol { list-style: none; margin: 6px 0 0; padding: 0 0 0 24px; display: flex; flex-direction: column; }
+.chapter li button {
+  all: unset; cursor: pointer; display: block; width: 100%; font-size: 13px; color: var(--text-2); padding: 3px 8px; border-radius: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chapter li button:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.chapter li button:focus-visible { outline: 2px solid var(--sand); outline-offset: 1px; }
+.chapter li button[aria-current="step"] { color: var(--ink); background: var(--sand); font-weight: 600; }
+.chapter.next .chapter-no { color: var(--teal); }
+
+.stage { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.screen { position: relative; background: #0b0d1c; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.screen img.shot { display: block; width: 100%; height: auto; max-width: 100%; }
+.hl {
+  position: absolute; border: 2.5px solid var(--sand); border-radius: 9px;
+  box-shadow: 0 0 0 4px rgba(243, 202, 129, 0.22), 0 0 24px rgba(243, 202, 129, 0.35);
+  animation: pop 0.45s cubic-bezier(.2,.9,.3,1.25) both; pointer-events: none;
+}
+.hl .badge { position: absolute; left: -14px; top: -14px; }
+.badge {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--sand); color: var(--ink); font-weight: 700; font-size: 13px;
+  display: inline-grid; place-items: center; font-family: var(--body); box-shadow: 0 2px 8px rgba(0,0,0,0.45); flex: none;
+}
+@keyframes pop { from { opacity: 0; transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
+.screen img.shot { animation: fade 0.35s ease both; }
+@keyframes fade { from { opacity: 0.35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hl, .screen img.shot { animation: none; } }
+
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 9px;
+  border: 1px solid var(--line-strong); color: var(--text); font-weight: 500; font-size: 14px;
+}
+.btn:hover { background: rgba(255,255,255,0.06); }
+.btn:focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
+.btn.primary { background: var(--teal); border-color: var(--teal); color: var(--ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: 0.35; cursor: default; }
+.progress { flex: 1 1 160px; min-width: 120px; height: 6px; background: var(--panel); border-radius: 999px; overflow: hidden; position: relative; }
+.progress span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--teal), var(--sand)); border-radius: inherit; }
+.counter { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.narration { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 24px; }
+.narration > * { min-width: 0; }
+.narration .where { grid-column: 1 / -1; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.narration h2 { font-family: var(--display); font-size: 24px; line-height: 1.2; margin: 0; grid-column: 1; text-wrap: balance; }
+.narration .text { color: var(--text-2); margin: 0; grid-column: 1; max-width: 72ch; }
+.notes { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; grid-column: 1; }
+.notes li { display: flex; gap: 10px; align-items: flex-start; }
+.notes li span.t { padding-top: 2px; }
+.git { grid-column: 1; margin-top: 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-family: var(--mono); font-size: 12.5px; color: var(--text-2); }
+.git .tag { font-family: var(--body); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); background: var(--teal); border-radius: 5px; padding: 1px 7px; }
+.game { grid-column: 2; grid-row: 2 / span 4; width: min(300px, 100%); display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.game img { width: 100%; border-radius: 8px; border: 1px solid var(--line); image-rendering: pixelated; }
+.game figcaption { font-size: 12px; color: var(--muted); }
+@media (max-width: 760px) { .narration { grid-template-columns: minmax(0, 1fr); } .game { grid-column: 1; grid-row: auto; } }
+.keys { font-size: 12px; color: var(--muted); }
+kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--text-2); }
+
+/* ---- result ---- */
+.result { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 960px) { .result { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card h3 { font-family: var(--display); font-size: 20px; margin: 0; }
+.card p { margin: 0; color: var(--text-2); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td code, .card code { font-family: var(--mono); font-size: 12.5px; color: var(--sand); white-space: nowrap; }
+td.sha { font-family: var(--mono); font-size: 12.5px; color: var(--text-2); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+.card ul { margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 256 256" aria-hidden="true">
+      <rect x="80" y="12" width="164" height="164" rx="36" fill="#4CA5B0"/>
+      <rect x="12" y="80" width="164" height="164" rx="36" fill="#F65D53" stroke="#13162b" stroke-width="14"/>
+      <g fill="#212544"><rect x="58" y="118" width="30" height="92" rx="5"/><rect x="58" y="118" width="82" height="28" rx="5"/><rect x="58" y="160" width="66" height="26" rx="5"/></g>
+    </svg>
+    <div class="head-text">
+      <span class="eyebrow">Fries' Demo Deck · walkthrough</span>
+      <h1>From an empty folder to a week ready for class</h1>
+      <p class="lede">A recording of the app setting up a course and rebuilding the MonoGame turret example, commit by commit:
+        the starter project on Start, three demo steps and the finished solution. Every frame is a real screenshot of the app.</p>
+      <div class="facts" id="facts"></div>
+    </div>
+  </header>
+
+  <section class="player" aria-label="Walkthrough player">
+    <nav class="chapters" id="chapters" aria-label="Chapters"></nav>
+    <div class="stage">
+      <div class="screen" id="screen"><img class="shot" id="shot" alt=""></div>
+      <div class="controls">
+        <button class="btn" id="prev" aria-label="Previous frame">◀ Previous</button>
+        <button class="btn primary" id="play" aria-label="Play">▶ Play</button>
+        <button class="btn" id="next" aria-label="Next frame">Next ▶</button>
+        <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+        <span class="counter" id="counter"></span>
+      </div>
+      <article class="narration" id="narration" aria-live="polite">
+        <span class="where" id="where"></span>
+        <h2 id="title"></h2>
+        <p class="text" id="text"></p>
+        <ol class="notes" id="notes"></ol>
+        <div class="git" id="git" hidden><span class="tag">git</span><span id="gitText"></span></div>
+        <figure class="game" id="game" hidden><img id="gameImg" alt=""><figcaption id="gameCaption"></figcaption></figure>
+      </article>
+      <span class="keys"><kbd>←</kbd> <kbd>→</kbd> step through · <kbd>Space</kbd> play or pause</span>
+    </div>
+  </section>
+
+  <section class="result">
+    <div class="card">
+      <h3>What the recording produced</h3>
+      <p>The repository <code>Projects\MonoGame_Turret</code> now has one branch per point of the week. Each one has the same
+        <code>Game1.cs</code> as the matching commit of the example project.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Example commit</th><th>Branch in the course</th><th>On the timeline</th></tr></thead>
+          <tbody>
+            <tr><td class="sha">465d877 · 1. Create start project</td><td><code>week01/start</code></td><td><span class="dot" style="background:var(--teal)"></span>Start</td></tr>
+            <tr><td class="sha">ba2a017 · 2. Create turret (draw only)</td><td><code>week01/step-1</code></td><td><span class="dot" style="background:var(--sand)"></span>Step 1 · Turret (draw only)</td></tr>
+            <tr><td class="sha">d946c9b · 3. Turret Movement</td><td><code>week01/step-2</code></td><td><span class="dot" style="background:var(--sand)"></span>Step 2 · Turret movement</td></tr>
+            <tr><td class="sha">e68a277 · 4. Draw single missile</td><td><code>week01/step-3</code></td><td><span class="dot" style="background:var(--sand)"></span>Step 3 · Single missile</td></tr>
+            <tr><td class="sha">bb038af · 5. shooting missiles</td><td><code>week01/solution</code></td><td><span class="dot" style="background:var(--coral)"></span>Solution</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Next: Demo mode</h3>
+      <p>The video continues where this recording stops: switching to Demo mode and jumping between the steps in class.</p>
+      <ul>
+        <li>Click <b>Demo mode ▶</b>. With everything saved, it switches at once and the window turns teal.</li>
+        <li>Click a step card to jump to it, or use <kbd>PageDown</kbd> / <kbd>PageUp</kbd> on a presenter clicker.</li>
+        <li>Whatever you type live is thrown away on the next jump; <b>Reset step</b> undoes it on the spot.</li>
+        <li><b>Leave demo</b> brings you back to the solution, exactly as you left it.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = [{"chapter":"Connect the course folder","source":"Empty folder D:\\DAE\\PD1\\Exercises"},{"title":"Start the app","text":"With no course open, the app shows its start page.","notes":["Open course folder: choose the folder that will hold the course."],"image":"01-start.png","width":1400,"height":975,"marks":[{"label":"1","x":43.57,"y":67.69,"w":12.86,"h":4.1}]},{"title":"Choose the empty folder","text":"A course folder holds one exercises.yaml file and a Projects folder with a git repository per project. Start with an empty folder.","notes":["Folder: D:\\DAE\\PD1\\Exercises","Select Folder"],"image":"02-folder.png","width":1400,"height":975,"marks":[{"label":"1","x":15.5,"y":55.18,"w":51.57,"h":3.08},{"label":"2","x":48.57,"y":58.97,"w":9.57,"h":3.38}]},{"title":"Make it a course folder","text":"The folder has no exercises.yaml yet, so the app offers to set it up.","notes":["Yes creates exercises.yaml and an empty Projects folder."],"image":"03-make-course.png","width":1400,"height":975,"marks":[{"label":"1","x":61.36,"y":58.97,"w":6.43,"h":4.1}],"git":"Exercises\\exercises.yaml   Exercises\\Projects\\"},{"chapter":"Create the project","source":"One git repository for the MonoGame project"},{"title":"The course has no project yet","text":"Every project of the course (a Unity project, a MonoGame game, a web API) gets its own git repository inside Projects.","notes":["Create project"],"image":"04-no-project.png","width":1400,"height":975,"marks":[{"label":"1","x":44.93,"y":60.92,"w":10.14,"h":4.1}]},{"title":"Name the repository","text":"The project itself (the .sln or .slnx and its code) is added in the first week. This only creates the repository.","notes":["Name: the folder name of the repository.","Type: .NET project for MonoGame. It decides the starting .gitignore; the example brings its own Visual Studio .gitignore later.","OK"],"image":"05-create-project.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":48.72,"w":35.5,"h":5.54},{"label":"2","x":32.29,"y":59.18,"w":35.5,"h":4.1},{"label":"3","x":61.36,"y":66.15,"w":6.43,"h":4.1}],"git":"git init in Projects\\MonoGame_Turret, main: README, .gitignore, .gitattributes"},{"chapter":"Create week 1","source":"Branches week01/start and week01/solution"},{"title":"Add the first week","text":"Weeks are the backbone: each week is one exercise, from its start situation to its solution.","notes":["+ creates a new week."],"image":"06-empty-weeks.png","width":1400,"height":975,"marks":[{"label":"1","x":23.21,"y":14.05,"w":2.5,"h":3.59}]},{"title":"New week","text":"For later weeks you can continue from the previous week\u0027s solution. The first week starts from an empty project.","notes":["Week number, filled in for you.","Title, shown in the week list and in Demo mode.","Start from an empty project (it keeps the .gitignore from main).","Create week"],"image":"07-new-week.png","width":1400,"height":975,"marks":[{"label":"1","x":38.93,"y":32.72,"w":5,"h":6.77},{"label":"2","x":33.14,"y":44.41,"w":33.71,"h":5.54},{"label":"3","x":33.14,"y":55.18,"w":33.71,"h":2.26},{"label":"4","x":57.71,"y":66.05,"w":9.14,"h":4.1}],"git":"week01/start and week01/solution, both on \"week01: empty start\""},{"title":"Week 1 exists","text":"A week has a Start (what students get) and a Solution (where you build the exercise). Demo steps appear in between later.","notes":["You are on the solution. Saving here moves the solution forward.","The steps of the week, in order.","The starter project belongs on Start: open it first."],"image":"08-week-created.png","width":1400,"height":975,"marks":[{"label":"1","x":-4.29,"y":-4.1,"w":0,"h":0},{"label":"2","x":29.43,"y":40.41,"w":67.07,"h":18.15},{"label":"3","x":88.57,"y":42.87,"w":6.43,"h":4.1}]},{"chapter":"Put the starter project on Start","source":"Recreates commit 465d877 \"1. Create start project with spritesheet and packages\""},{"title":"Working on the start","text":"Start is what students download at the beginning of the week, so the starter project is saved here.","notes":["Working on the start.","Saving here changes the start only. The solution gets it when you propagate (next frames)."],"image":"09-on-start.png","width":1400,"height":975,"marks":[{"label":"1","x":33.07,"y":27.38,"w":11.71,"h":2.36},{"label":"2","x":33.07,"y":32.82,"w":52.64,"h":2.05}]},{"title":"Add the starter files","text":"Create or copy the starter in Visual Studio: here the spritesheet, the MonoGame packages and the template Game1.cs. The app notices new and changed files by itself.","notes":["11 unsaved changes. Click to see them."],"image":"10-starter-files.png","width":1400,"height":975,"marks":[{"label":"1","x":45.71,"y":27.38,"w":12.29,"h":2.77}]},{"title":"See what changed","text":"The Changes window works like GitHub Desktop and stays open while you work.","notes":["Every changed file, with a badge: + new, • changed, − deleted.","The diff of the selected file.","Select files (Ctrl or Shift-click) to throw away changes you do not want."],"image":"11-changes-window.png","width":1240,"height":800,"marks":[{"label":"1","x":3.63,"y":24,"w":32.5,"h":60.5},{"label":"2","x":38.31,"y":23.12,"w":58.87,"h":72.5},{"label":"3","x":4.03,"y":89.38,"w":31.69,"h":5}]},{"title":"Save the starter","text":"Save stores the changes as one commit on the branch you are on.","notes":["What you did, in a few words.","Save"],"image":"12-save-start.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":51.18,"w":35.5,"h":5.64},{"label":"2","x":59.21,"y":59.08,"w":8.57,"h":4.1}],"git":"366e6a9 \"Starter project: spritesheet and MonoGame packages\" on week01/start"},{"title":"The solution does not have it yet","text":"The solution was created before the starter existed. The app shows that the later steps are missing this save.","notes":["This pill marks saves that later steps do not have.","The same, in words.","Propagate carries the save forward."],"image":"13-not-in-later-steps.png","width":1400,"height":975,"marks":[{"label":"1","x":79.93,"y":48.41,"w":14.14,"h":2.87},{"label":"2","x":33.07,"y":32.82,"w":43.43,"h":4.1},{"label":"3","x":77.57,"y":30.05,"w":8.14,"h":4.1}]},{"title":"Propagate","text":"Propagate merges the save into every later step and solution. Git checks for conflicts first, in memory, before anything changes.","notes":["Merged into the solution, no conflicts.","Propagate"],"image":"14-propagate.png","width":1400,"height":975,"marks":[{"label":"1","x":27.79,"y":51.08,"w":44.43,"h":7.79},{"label":"2","x":64.07,"y":61.74,"w":8.14,"h":4.1}],"git":"week01/solution now contains 366e6a9 (merge forward, history is never rewritten)"},{"title":"In sync","text":"The pill is gone: the solution now contains the starter. Time to build the exercise on the solution.","notes":["Open the Solution."],"image":"15-propagated.png","width":1400,"height":975,"marks":[{"label":"1","x":88.57,"y":54.77,"w":6.43,"h":4.1}]},{"title":"Working on the solution","text":"From here on, every save moves the solution forward. Mark a save as a demo step when you want to jump to that point in class.","notes":["Working on the solution.","Everything is saved."],"image":"16-on-solution.png","width":1400,"height":975,"marks":[{"label":"1","x":33.07,"y":27.38,"w":13.79,"h":2.36},{"label":"2","x":47.71,"y":27.38,"w":9.71,"h":2.26}]},{"chapter":"Build the exercise in demo steps","source":"Recreates commits ba2a017, d946c9b and e68a277 as demo steps 1 to 3"},{"title":"Write the next part in Visual Studio","text":"Commit 2 of the example: draw the turret. Edit in Visual Studio as usual; the pill counts what changed.","notes":["2 unsaved changes."],"image":"17-step1-a-edited.png","width":1400,"height":975,"marks":[{"label":"1","x":47.71,"y":27.38,"w":12,"h":2.77}]},{"title":"Check the change","text":"The diff is what you will type live in class, so it is worth a look before saving.","notes":["Game1.cs: turret sprite sheet, position and size, drawn in Draw."],"image":"17-step1-b-diff.png","width":1240,"height":800,"marks":[{"label":"1","x":38.31,"y":23.12,"w":58.87,"h":72.5}]},{"title":"Save it as demo step 1","text":"Marking a save as a demo step puts a bookmark on it. Students never see demo steps; they are for you in class.","notes":["What you did.","Mark this as demo step 1.","A title for the step, shown on its card and in Demo mode.","Save"],"image":"17-step1-c-save.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":41.13,"w":35.5,"h":5.64},{"label":"2","x":33.57,"y":51.08,"w":33,"h":2.26},{"label":"3","x":35.71,"y":59.18,"w":30.86,"h":5.54},{"label":"4","x":59.21,"y":69.13,"w":8.57,"h":4.1}],"git":"1a8d914 on week01/solution, plus branch week01/step-1 on the same commit"},{"title":"Step 1 is on the timeline","text":"The new step sits between Start and Solution. In the game, the turret is drawn at the bottom of the screen.","notes":["Start, Step 1, Solution."],"image":"17-step1-d-saved.png","width":1400,"height":975,"marks":[{"label":"1","x":29.43,"y":40.41,"w":67.07,"h":27.18}],"game":"game-step-1.png","gameCaption":"Step 1 in the game: the turret at the bottom."},{"title":"Step 2: turret movement","text":"Commit 3 of the example, written on the solution again.","notes":["Keyboard state, MoveTurret and keeping the turret on screen."],"image":"18-step2-b-diff.png","width":1240,"height":800,"marks":[{"label":"1","x":38.31,"y":23.12,"w":58.87,"h":72.5}]},{"title":"Save it as demo step 2","text":"The step number counts up by itself.","notes":["What you did.","Mark this as demo step 2.","Step title.","Save"],"image":"18-step2-c-save.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":41.13,"w":35.5,"h":5.64},{"label":"2","x":33.57,"y":51.08,"w":33,"h":2.26},{"label":"3","x":35.71,"y":59.18,"w":30.86,"h":5.54},{"label":"4","x":59.21,"y":69.13,"w":8.57,"h":4.1}],"git":"3c9b0be, branch week01/step-2"},{"title":"Two steps","text":"Each step is a fixed point; the solution keeps moving forward with every save.","notes":["Start, Step 1, Step 2, Solution."],"image":"18-step2-d-saved.png","width":1400,"height":975,"marks":[{"label":"1","x":29.43,"y":40.41,"w":66.21,"h":36.21}]},{"title":"Step 3: a single missile","text":"Commit 4 of the example.","notes":["DrawMissile draws one missile from the sprite sheet, at a fixed position (100, 100) for now."],"image":"19-step3-b-diff.png","width":1240,"height":800,"marks":[{"label":"1","x":38.31,"y":23.12,"w":58.87,"h":72.5}]},{"title":"Save it as demo step 3","text":"Same as before: describe it, mark it, give it a title.","notes":["What you did.","Mark this as demo step 3.","Step title.","Save"],"image":"19-step3-c-save.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":41.13,"w":35.5,"h":5.64},{"label":"2","x":33.57,"y":51.08,"w":33,"h":2.26},{"label":"3","x":35.71,"y":59.18,"w":30.86,"h":5.54},{"label":"4","x":59.21,"y":69.13,"w":8.57,"h":4.1}],"git":"5d2b504, branch week01/step-3"},{"title":"Three steps","text":"In the game, the missile now appears in the top left.","notes":["Start, three demo steps, Solution."],"image":"19-step3-d-saved.png","width":1400,"height":975,"marks":[{"label":"1","x":29.43,"y":40.41,"w":66.21,"h":45.23}],"game":"game-step-3.png","gameCaption":"Step 3 in the game: the missile top left, the turret at the bottom."},{"chapter":"Finish the solution","source":"Recreates commit bb038af \"5. shooting missiles\""},{"title":"The last part: shooting","text":"Commit 5 of the example completes the exercise.","notes":["A list of missiles: releasing Space adds one at the turret, they fly up and are removed off screen."],"image":"20-final-b-diff.png","width":1240,"height":800,"marks":[{"label":"1","x":38.31,"y":23.12,"w":58.87,"h":72.5}]},{"title":"Save the finished exercise","text":"There is no separate \"final\" action: the solution is always the latest save on the solution.","notes":["What you did.","Save without marking a step: this is the finished solution."],"image":"20-final-c-save.png","width":1400,"height":975,"marks":[{"label":"1","x":32.29,"y":41.13,"w":35.5,"h":5.64},{"label":"2","x":59.21,"y":69.13,"w":8.57,"h":4.1}],"git":"dc6c69d on week01/solution"},{"title":"Week 1 is ready for class","text":"Start, three demo steps and the solution, each matching a commit of the example project. Notes are shown in Demo mode as a reminder.","notes":["The finished timeline.","Notes for yourself, for example what to demo live.","Demo mode: jump between the steps in class (see the video)."],"image":"21-finished-week.png","width":1400,"height":975,"marks":[{"label":"1","x":29.43,"y":28.62,"w":66.21,"h":45.23},{"label":"2","x":29.43,"y":80.41,"w":66.21,"h":12.31},{"label":"3","x":86.36,"y":5.95,"w":10.86,"h":4.1}],"game":"game-solution.png","gameCaption":"The solution in the game (press Space to shoot)."}];
+
+const frames = [];
+const chapters = [];
+for (const item of DATA) {
+  if (item.chapter) { chapters.push({ title: item.chapter, source: item.source, frames: [] }); continue; }
+  const ch = chapters[chapters.length - 1];
+  const f = { ...item, chapterIndex: chapters.length - 1, index: frames.length };
+  ch.frames.push(f); frames.push(f);
+}
+
+const $ = id => document.getElementById(id);
+const chaptersEl = $('chapters');
+const frameButtons = [];
+chapters.forEach((ch, ci) => {
+  const box = document.createElement('div'); box.className = 'chapter'; box.dataset.chapter = ci;
+  const head = document.createElement('div'); head.className = 'chapter-head';
+  const no = document.createElement('span'); no.className = 'chapter-no'; no.textContent = String(ci + 1).padStart(2, '0');
+  const t = document.createElement('span'); t.className = 'chapter-title'; t.textContent = ch.title;
+  head.append(no, t);
+  const src = document.createElement('div'); src.className = 'chapter-source'; src.textContent = ch.source;
+  const ol = document.createElement('ol');
+  ch.frames.forEach(f => {
+    const li = document.createElement('li'); const b = document.createElement('button');
+    b.type = 'button'; b.textContent = f.title; b.addEventListener('click', () => { stop(); show(f.index); });
+    li.append(b); ol.append(li); frameButtons[f.index] = b;
+  });
+  box.append(head, src, ol); chaptersEl.append(box);
+});
+const nextBox = document.createElement('div'); nextBox.className = 'chapter next';
+nextBox.innerHTML = '<div class="chapter-head"><span class="chapter-no">' + String(chapters.length + 1).padStart(2, '0') +
+  '</span><span class="chapter-title">Demo mode</span></div><div class="chapter-source">In the video</div>';
+chaptersEl.append(nextBox);
+
+$('facts').innerHTML = '';
+[[frames.length, 'frames'], [chapters.length, 'chapters'], ['5', 'commits recreated'], ['3', 'demo steps']].forEach(([n, l]) => {
+  const s = document.createElement('span'); s.className = 'fact'; const b = document.createElement('b'); b.textContent = n;
+  s.append(b, ' ' + l); $('facts').append(s);
+});
+
+let current = 0;
+function show(i) {
+  current = Math.max(0, Math.min(frames.length - 1, i));
+  const f = frames[current];
+  const screen = $('screen');
+  screen.querySelectorAll('.hl').forEach(e => e.remove());
+  const img = $('shot');
+  img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+  img.src = 'shots/' + f.image; img.alt = f.title;
+  img.width = f.width; img.height = f.height;
+  f.marks.forEach((m, k) => {
+    const hl = document.createElement('div'); hl.className = 'hl';
+    const pad = 0.4;
+    hl.style.left = (m.x - pad) + '%'; hl.style.top = (m.y - pad * f.width / f.height) + '%';
+    hl.style.width = (m.w + 2 * pad) + '%'; hl.style.height = (m.h + 2 * pad * f.width / f.height) + '%';
+    hl.style.animationDelay = (0.15 + k * 0.18) + 's';
+    const b = document.createElement('span'); b.className = 'badge'; b.textContent = m.label;
+    hl.append(b); screen.append(hl);
+  });
+
+  const ch = chapters[f.chapterIndex];
+  $('where').textContent = 'Chapter ' + (f.chapterIndex + 1) + ' · ' + ch.title;
+  $('title').textContent = f.title;
+  $('text').textContent = f.text;
+  const notes = $('notes'); notes.innerHTML = '';
+  (f.notes || []).forEach((n, k) => {
+    const li = document.createElement('li');
+    const b = document.createElement('span'); b.className = 'badge'; b.textContent = f.marks[k] ? f.marks[k].label : (k + 1);
+    const t = document.createElement('span'); t.className = 't'; t.textContent = n;
+    li.append(b, t); notes.append(li);
+  });
+  $('git').hidden = !f.git; $('gitText').textContent = f.git || '';
+  $('game').hidden = !f.game;
+  if (f.game) { $('gameImg').src = 'shots/' + f.game; $('gameImg').alt = f.gameCaption; $('gameCaption').textContent = f.gameCaption; }
+
+  frameButtons.forEach(b => b.removeAttribute('aria-current'));
+  frameButtons[current].setAttribute('aria-current', 'step');
+  document.querySelectorAll('.chapter').forEach(c => c.classList.toggle('current', +c.dataset.chapter === f.chapterIndex));
+  $('counter').textContent = String(current + 1).padStart(2, '0') + ' / ' + frames.length;
+  $('prev').disabled = current === 0; $('next').disabled = current === frames.length - 1;
+  setBar(0);
+  if (frames[current + 1]) { const pre = new Image(); pre.src = 'shots/' + frames[current + 1].image; }
+}
+
+// Autoplay: each frame stays long enough to read its narration.
+let playing = false, startTime = 0, raf = 0;
+const duration = f => 3500 + 32 * ((f.text || '').length + (f.notes || []).join(' ').length);
+function setBar(p) { $('bar').style.width = (((current + p) / frames.length) * 100).toFixed(2) + '%'; }
+function tick(t) {
+  if (!playing) return;
+  const p = Math.min(1, (t - startTime) / duration(frames[current]));
+  setBar(p);
+  if (p >= 1) {
+    if (current >= frames.length - 1) { stop(); setBar(1); return; }
+    show(current + 1); startTime = t;
+  }
+  raf = requestAnimationFrame(tick);
+}
+function play() { if (current >= frames.length - 1) show(0); playing = true; $('play').textContent = '❚❚ Pause'; $('play').setAttribute('aria-label', 'Pause'); startTime = performance.now(); raf = requestAnimationFrame(tick); }
+function stop() { playing = false; cancelAnimationFrame(raf); $('play').textContent = '▶ Play'; $('play').setAttribute('aria-label', 'Play'); }
+$('play').addEventListener('click', () => playing ? stop() : play());
+$('prev').addEventListener('click', () => { stop(); show(current - 1); });
+$('next').addEventListener('click', () => { stop(); show(current + 1); });
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea')) return;
+  if (e.key === 'ArrowRight') { stop(); show(current + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { stop(); show(current - 1); e.preventDefault(); }
+  else if (e.key === ' ' && !e.target.closest('button')) { playing ? stop() : play(); e.preventDefault(); }
+});
+// A link ending in #f12 opens frame 12.
+const fromHash = /^#f(\d+)$/.exec(location.hash);
+show(fromHash ? +fromHash[1] - 1 : 0);
+</script>
+
+</body>
+</html>

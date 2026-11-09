@@ -42,6 +42,21 @@ Requires [Git for Windows](https://git-scm.com/download/win) on the PATH.
 The app refreshes by itself when files or branches change (in Unity, an IDE or the command line).
 *Git log* at the bottom shows every git command that changes something.
 
+## Several projects in one course
+
+A course can hold several projects: the shared Unity project, a separate Unity project, a .NET console app, and so
+on. Each project is its own git repository in `Projects\`; use one course folder per course, not per project.
+
+- **Add project...** in the *Open course* menu creates another repository (or clone one into `Projects\` yourself;
+  the app picks it up).
+- Weeks span projects. A new week goes into the project you choose; **+ project** on a week's page adds another
+  project to that same week, with its own start and solution.
+- **Open** and Demo-mode jumps switch every project that has that step. A project without the step stays where it is.
+- **Save** stores the changes of every project that is on that week, and *mark as demo step* creates the step in all
+  of them, so a step jumps both projects to the matching point.
+- With more than one project, the week page shows which projects are in the week, where each one is, and which
+  projects have each step.
+
 ## Get the .gitignore right first
 
 The `.gitignore` decides what the app treats as your work, so set it up before the first save:

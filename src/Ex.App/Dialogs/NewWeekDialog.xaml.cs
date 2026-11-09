@@ -9,17 +9,39 @@ public partial class NewWeekDialog : Window
     private readonly IReadOnlyList<RepoState> _repos;
     private string? _previousSolution;
 
-    public NewWeekDialog(IReadOnlyList<RepoState> repos)
+    /// <param name="repos">The projects to choose from.</param>
+    /// <param name="fixedWeek">
+    /// Set to add a project to an existing week: the week number is fixed, the title is the week's own, and
+    /// <paramref name="repos"/> holds only the projects that don't have this week yet.
+    /// </param>
+    public NewWeekDialog(IReadOnlyList<RepoState> repos, int? fixedWeek = null)
     {
         InitializeComponent();
         _repos = repos;
-        RepoPanel.Visibility = repos.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         RepoCombo.ItemsSource = repos.Select(r => r.Name).ToList();
         RepoCombo.SelectedIndex = 0;
-        WeekText.Text = CourseSession.NextWeekNumber(repos).ToString();
+        if (fixedWeek is { } week)
+        {
+            Title = $"Add project to week {week}";
+            HeadingText.Text = "Add project to week";
+            WeekText.Text = week.ToString();
+            WeekText.IsReadOnly = true;
+            WeekText.Focusable = false;
+            AddIntroText.Text = $"The project gets its own week {week} branches (start and solution). Open, Save and Demo mode " +
+                                "then work on this project and the others of the week together.";
+            AddIntroText.Visibility = Visibility.Visible;
+            TitlePanel.Visibility = Visibility.Collapsed;
+            RepoPanel.Visibility = Visibility.Visible;
+            OkButton.Content = $"Add to week {week}";
+        }
+        else
+        {
+            RepoPanel.Visibility = repos.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            WeekText.Text = CourseSession.NextWeekNumber(repos).ToString();
+        }
         EmptyRadio.IsChecked = false;
         UpdateStartOptions();
-        Loaded += (_, _) => TitleText.Focus();
+        Loaded += (_, _) => (fixedWeek == null ? TitleText : (UIElement)RepoCombo).Focus();
     }
 
     public RepoState? Repo => _repos.FirstOrDefault(r => r.Name == RepoCombo.SelectedItem as string);

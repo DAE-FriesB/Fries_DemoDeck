@@ -6,14 +6,17 @@
         ShowInTaskbar="False">
     <StackPanel Margin="24,20">
         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-            <TextBlock Text="Week" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold"
+            <TextBlock x:Name="HeadingText" Text="Week" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold"
                        VerticalAlignment="Center" Margin="0,0,10,0" />
             <TextBox x:Name="WeekText" Width="56" FontSize="20" FontWeight="SemiBold" HorizontalContentAlignment="Center"
                      TextChanged="OnInputChanged" />
         </StackPanel>
+        <TextBlock x:Name="AddIntroText" Style="{StaticResource Muted}" Margin="0,-8,0,18" Visibility="Collapsed" />
 
-        <TextBlock Text="TITLE" Style="{StaticResource Caption}" Margin="0,0,0,6" />
-        <TextBox x:Name="TitleText" Margin="0,0,0,18" />
+        <StackPanel x:Name="TitlePanel">
+            <TextBlock Text="TITLE" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+            <TextBox x:Name="TitleText" Margin="0,0,0,18" />
+        </StackPanel>
 
         <StackPanel x:Name="RepoPanel" Visibility="Collapsed">
             <TextBlock Text="PROJECT" Style="{StaticResource Caption}" Margin="0,0,0,6" />
@@ -28,7 +31,7 @@
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" IsCancel="True" Margin="0,0,8,0" />
-            <Button Content="Create week" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="OnOk" />
+            <Button x:Name="OkButton" Content="Create week" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="OnOk" />
         </StackPanel>
     </StackPanel>
 </Window>

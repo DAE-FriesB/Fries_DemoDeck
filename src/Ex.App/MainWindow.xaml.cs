@@ -22,8 +22,11 @@ public sealed record WeekRow(string Id, string Name, string Title, string Summar
 /// <summary>A step card. In Preparation it has an Open button; in Demo mode the whole card is clickable.</summary>
 public sealed record StepRow(
     string Branch, string Label, string Caption, bool IsCurrent, bool ShowOpen, Cursor? CardCursor,
-    Brush NodeBrush, Brush NodeSoft, Brush CardBrush, bool HasLineAbove, bool HasLineBelow, int Unsynced, bool IsDemo)
+    Brush NodeBrush, Brush NodeSoft, Brush CardBrush, bool HasLineAbove, bool HasLineBelow, int Unsynced, bool IsDemo,
+    string ProjectsText = "")
 {
+    /// <summary>Which projects have this step; only shown when the course has more than one project.</summary>
+    public bool ShowProjects => ProjectsText.Length > 0;
     public bool ShowUnsynced => Unsynced > 0 && !IsDemo;
     public string UnsyncedText => Unsynced == 1 ? "1 save not in later steps" : $"{Unsynced} saves not in later steps";
 }
@@ -99,6 +102,13 @@ public partial class MainWindow : Window
         var browse = new MenuItem { Header = "Open course folder..." };
         browse.Click += async (_, _) => await BrowseCourseAsync();
         menu.Items.Add(browse);
+        if (_session != null && !IsDemo)
+        {
+            // Every project of the course (a Unity project, a console app...) is its own repository in Projects\.
+            var addProject = new MenuItem { Header = "Add project..." };
+            addProject.Click += async (_, _) => await CreateProjectAsync();
+            menu.Items.Add(addProject);
+        }
         if (_settings.RecentFolders.Count > 0)
         {
             menu.Items.Add(new Separator());
@@ -316,9 +326,14 @@ public partial class MainWindow : Window
         var rows = (_session?.Weeks ?? []).Select(w =>
         {
             var steps = w.Entries.Count(e => e.EntryId.StartsWith("step-"));
+            var projects = w.Entries.SelectMany(e => e.Repos).Distinct().Count();
+            var origin = w.Continuation.Count == 0 ? ""
+                : w.Continuation.Values.All(v => v) ? "  ·  continues"
+                : w.Continuation.Values.All(v => !v) ? "  ·  fresh start"
+                : "";   // projects start differently; the week page says how, per project
             var summary = w.OnlyInManifest ? "no branches yet"
                 : (steps == 0 ? "no demo steps" : steps == 1 ? "1 demo step" : $"{steps} demo steps")
-                  + (w.Continuation.Count == 0 ? "" : w.Continuation.Values.All(v => v) ? "  ·  continues" : "  ·  fresh start");
+                  + (projects > 1 ? $"  ·  {projects} projects" : "") + origin;
             return new WeekRow(w.Id, WeekName(w).ToUpperInvariant(), w.Title ?? "Untitled week", summary, w.Entries.Any(e => current.Contains(e.BranchName)));
         }).ToList();
 
@@ -370,10 +385,12 @@ public partial class MainWindow : Window
         if (!WeekNotesBox.IsKeyboardFocusWithin)
             WeekNotesBox.Text = week.Manifest?.Notes ?? "";
         WeekOriginText.Text = DescribeOrigin(week);
+        ShowProjectsRow(week);
 
         var demo = IsDemo;
         var current = CurrentBranches();
         var last = week.Entries.Count - 1;
+        var manyProjects = _session.States.Count > 1;
         StepList.ItemsSource = week.Entries.Select((e, i) =>
         {
             var isCurrent = current.Contains(e.BranchName);
@@ -386,7 +403,8 @@ public partial class MainWindow : Window
             var soft = color == "Sand" ? "SandSoft" : color == "Teal" ? "TealSoft" : "CoralSoft";
             return new StepRow(e.BranchName, label, caption, isCurrent, !isCurrent && !demo,
                 demo && !isCurrent ? Cursors.Hand : null,
-                Res(color), Res(soft), Res(isCurrent ? "Bg2" : "Bg1"), i > 0, i < last, e.Unsynced, demo);
+                Res(color), Res(soft), Res(isCurrent ? "Bg2" : "Bg1"), i > 0, i < last, e.Unsynced, demo,
+                manyProjects ? string.Join("  ·  ", e.Repos) : "");
         }).ToList();
 
         if (demo)
@@ -408,16 +426,30 @@ public partial class MainWindow : Window
             var changes = working.Sum(r => r.Status.Count);
             var onSolution = branch.EndsWith("/solution");
             WorkDot.Fill = Res(changes > 0 ? "Peach" : "Teal");
-            WorkText.Text = $"Working on {(onSolution ? "the solution" : branch.EndsWith("/start") ? "the start" : "step " + branch[(branch.LastIndexOf('-') + 1)..])}";
+            var samePoint = working.All(r => r.CurrentBranch == branch);
+            WorkText.Text = samePoint ? $"Working on {PointName(branch)}" : $"Working on week {week.Week}";
+            if (working.Count > 1)
+            {
+                // Several projects in this week: show where each one is.
+                WorkProjectsText.Text = string.Join("\n", working.Select(r =>
+                    $"{r.Name}  ·  {PointName(r.CurrentBranch!)}  ·  " +
+                    (r.Status.Count == 0 ? "saved" : r.Status.Count == 1 ? "1 change" : $"{r.Status.Count} changes")));
+                WorkProjectsText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                WorkProjectsText.Visibility = Visibility.Collapsed;
+            }
             ChangesButton.Content = changes == 1 ? "1 unsaved change" : $"{changes} unsaved changes";
             ChangesButton.Visibility = changes > 0 ? Visibility.Visible : Visibility.Collapsed;
             AllSavedText.Visibility = changes > 0 ? Visibility.Collapsed : Visibility.Visible;
             var entry = week.Entries.FirstOrDefault(en => en.BranchName == branch);
             var unsynced = entry?.Unsynced ?? 0;
             var hasLater = week.Entries.LastOrDefault() is { } lastEntry && lastEntry.BranchName != branch;
+            var where = working.Count > 1 ? $" in {JoinNames(working.Select(r => r.Name))}" : "";
             WorkHint.Text = onSolution
-                ? "Save stores your changes. You can also mark the saved state as the next demo step."
-                : $"Save stores your changes on {DescribeBranch(branch)}.";
+                ? $"Save stores your changes{where}. You can also mark the saved state as the next demo step."
+                : $"Save stores your changes{where} on {DescribeBranch(branch)}.";
 
             // Working on an earlier point: say plainly that later steps will not have it.
             var saves = unsynced == 1 ? "1 save here is" : $"{unsynced} saves here are";
@@ -445,12 +477,96 @@ public partial class MainWindow : Window
     {
         if (week.OnlyInManifest)
             return "This week is in exercises.yaml but has no branches yet.";
-        var origin = week.Continuation.Count == 0 ? ""
-            : week.Continuation.Values.All(v => v) ? $"Continues from the solution of week {PreviousWeekNumber(week)}."
+        if (week.Continuation.Count == 0)
+            return "";
+        if (week.Continuation.Values.Distinct().Count() > 1)
+        {
+            // Projects of the same week can start differently: say it per project.
+            return string.Join("   ", week.Continuation.Select(kv =>
+                $"{kv.Key}: {(kv.Value ? $"continues week {PreviousWeekNumber(week)}" : "fresh start")}."));
+        }
+        return week.Continuation.Values.All(v => v)
+            ? $"Continues from the solution of week {PreviousWeekNumber(week)}."
             : "Fresh start (does not continue the previous week).";
-        if (_session!.States.Count > 1)
-            origin += $"  Projects: {string.Join(", ", week.Entries.SelectMany(e => e.Repos).Distinct())}.";
-        return origin.Trim();
+    }
+
+    /// <summary>"the solution", "the start" or "step 2".</summary>
+    private static string PointName(string branch) =>
+        branch.EndsWith("/solution") ? "the solution"
+        : branch.EndsWith("/start") ? "the start"
+        : "step " + branch[(branch.LastIndexOf('-') + 1)..];
+
+    /// <summary>"A", "A and B", "A, B and C".</summary>
+    private static string JoinNames(IEnumerable<string> names)
+    {
+        var list = names.ToList();
+        return list.Count <= 1 ? string.Join("", list) : string.Join(", ", list[..^1]) + " and " + list[^1];
+    }
+
+    /// <summary>Projects that have branches of this week, in course order.</summary>
+    private List<RepoState> WeekRepos(WeekOverview week) =>
+        _session!.States.Where(s => s.ExerciseBranches.Any(b => b.Week == week.Week)).ToList();
+
+    /// <summary>One chip per project of the week, plus "+ project" when another project could join it.</summary>
+    private void ShowProjectsRow(WeekOverview week)
+    {
+        ProjectsRow.Children.Clear();
+        var many = _session!.States.Count > 1;
+        ProjectsRow.Visibility = many ? Visibility.Visible : Visibility.Collapsed;
+        if (!many)
+            return;
+
+        var inWeek = WeekRepos(week);
+        foreach (var repo in inWeek)
+        {
+            var onWeek = repo.CurrentBranch is { } b
+                         && ExerciseBranch.TryParse(BranchNames.IsDemo(b) ? BranchNames.SnapshotOfDemo(b) : b, out var eb)
+                         && eb.Week == week.Week;
+            var chip = new Border
+            {
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 6, 6),
+                Background = Res(onWeek ? "AccentSoft" : "Bg2"),
+                ToolTip = onWeek ? $"{repo.Name} is on {repo.CurrentBranch}" : $"{repo.Name} is on {repo.CurrentBranch ?? "no branch"} (another week)",
+                Child = new TextBlock
+                {
+                    Text = repo.Name, FontSize = 12, FontWeight = FontWeights.SemiBold,
+                    Foreground = Res(onWeek ? "Accent" : "TextSecondary"),
+                },
+            };
+            ProjectsRow.Children.Add(chip);
+        }
+
+        if (!IsDemo && _session.States.Count > inWeek.Count)
+        {
+            var add = new Button
+            {
+                Content = "+ project", FontSize = 12, MinHeight = 24, Padding = new Thickness(10, 0, 10, 0),
+                Margin = new Thickness(0, 0, 6, 6), ToolTip = $"Add another project to week {week.Week}",
+            };
+            add.SetResourceReference(StyleProperty, "GhostButton");
+            add.Click += async (_, _) => await AddProjectToWeekAsync(week.Week);
+            ProjectsRow.Children.Add(add);
+        }
+    }
+
+    /// <summary>Gives another project branches for an existing week (its own start and solution).</summary>
+    private async Task AddProjectToWeekAsync(int week)
+    {
+        if (_session == null) return;
+        var candidates = _session.States.Where(s => !s.ExerciseBranches.Any(b => b.Week == week)).ToList();
+        if (candidates.Count == 0) return;
+        var dialog = new NewWeekDialog(candidates, fixedWeek: week) { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.Repo is not { } repo) return;
+        await RunAsync($"Adding {repo.Name} to week {week}", async () =>
+        {
+            if (!await EnsureSavedAsync([repo], $"Add {repo.Name} to week {week}"))
+                return;
+            if (!ConfirmUnityOpen([repo]))
+                return;
+            await _session.NewWeekAsync(repo, week, dialog.Source, null);
+            _weekToSelect = ExerciseBranch.WeekIdFor(week);
+            SetStatus($"Added {repo.Name} to week {week}. It is on its solution.");
+        });
     }
 
     private int PreviousWeekNumber(WeekOverview week) =>
@@ -516,7 +632,8 @@ public partial class MainWindow : Window
             return;
 
         var nextStep = working.Select(r => CourseSession.NextStepNumber(r, week.Week)).Max();
-        var dialog = new SaveDialog(working.Sum(r => r.Status.Count), onSolution ? nextStep : null) { Owner = this };
+        var dialog = new SaveDialog(working.Sum(r => r.Status.Count), onSolution ? nextStep : null,
+            working.Count > 1 ? JoinNames(working.Select(r => r.Name)) : null) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         await RunAsync("Saving", async () =>
         {
@@ -679,9 +796,21 @@ public partial class MainWindow : Window
         }
         var changes = _session!.States.Where(s => s.IsOnDemoBranch).Sum(s => s.Status.Count);
         DemoText.Text = $"At {DescribeEntry(current)}";
+        if (_session.States.Count > 1)
+        {
+            var onStep = _session.States.Where(s => s.CurrentBranch == BranchNames.DemoFor(current.BranchName)).Select(s => s.Name);
+            DemoText.Text += $"  ·  {JoinNames(onStep)}";
+        }
         DemoHint.Text = changes == 0
             ? "Nothing changed yet. Next / Previous (or PageDown / PageUp) move through the steps."
             : $"{changes} change{(changes == 1 ? "" : "s")} made during the demo: thrown away on the next jump or Reset step.";
+        // Projects without this step stay where they were: say so, it is easy to miss on stage.
+        var behind = _session.States
+            .Where(s => s.IsOnDemoBranch && s.CurrentBranch != BranchNames.DemoFor(current.BranchName))
+            .Select(s => $"{s.Name} has no {DescribeEntry(current).Split("  ·  ")[0]} and stays at {PointName(BranchNames.SnapshotOfDemo(s.CurrentBranch!))}.")
+            .ToList();
+        if (behind.Count > 0)
+            DemoHint.Text = string.Join(" ", behind) + " " + DemoHint.Text;
     }
 
     private static string DescribeEntry(EntryOverview entry) => entry.EntryId switch
@@ -691,13 +820,21 @@ public partial class MainWindow : Window
         _ => $"step {entry.EntryId[5..]}" + (string.IsNullOrWhiteSpace(entry.Title) ? "" : $"  ·  {entry.Title}"),
     };
 
-    /// <summary>The step the demo branches were started from (first repo on a demo branch).</summary>
+    /// <summary>
+    /// The step the demo is at. With several projects they can be at different steps: a jump to a step that only
+    /// some projects have leaves the others where they were. The current step is the one every project in Demo mode
+    /// is either on or doesn't have.
+    /// </summary>
     private EntryOverview? DemoCurrentEntry()
     {
-        var demoBranch = _session?.States.Select(s => s.CurrentBranch).FirstOrDefault(BranchNames.IsDemo);
-        if (demoBranch == null) return null;
-        var snapshot = BranchNames.SnapshotOfDemo(demoBranch);
-        return _session!.Weeks.SelectMany(w => w.Entries).FirstOrDefault(e => e.BranchName == snapshot);
+        if (_session == null) return null;
+        var onDemo = _session.States.Where(s => s.IsOnDemoBranch).ToList();
+        if (onDemo.Count == 0) return null;
+        var entries = _session.Weeks.SelectMany(w => w.Entries).ToList();
+        var candidates = onDemo.Select(s => BranchNames.SnapshotOfDemo(s.CurrentBranch!)).Distinct()
+            .Select(b => entries.FirstOrDefault(e => e.BranchName == b)).OfType<EntryOverview>().ToList();
+        return candidates.FirstOrDefault(e => onDemo.All(s => s.CurrentBranch == BranchNames.DemoFor(e.BranchName) || !s.HasBranch(e.BranchName)))
+               ?? candidates.FirstOrDefault();
     }
 
     private async void OnToggleMode(object sender, RoutedEventArgs e)
@@ -870,16 +1007,22 @@ public partial class MainWindow : Window
 
     // ---- project ---------------------------------------------------------------------------
 
-    private async void OnCreateProject(object sender, RoutedEventArgs e)
+    private async void OnCreateProject(object sender, RoutedEventArgs e) => await CreateProjectAsync();
+
+    private async Task CreateProjectAsync()
     {
         if (_session == null) return;
         var projects = _session.Course.ProjectsPath;
+        var first = _session.States.Count == 0;
         const string unity = "Unity project";
         const string dotnet = ".NET project (ASP.NET Core / console)";
-        var dialog = new PromptDialog("Create project",
+        var dialog = new PromptDialog(first ? "Create project" : "Add project",
                 $"Creates an empty git repository for the project in {projects}.\n" +
-                "You create the Unity or .NET project itself in the first week.")
-            .WithText("Name", "unity-project")
+                (first
+                    ? "You create the Unity or .NET project itself in the first week."
+                    : "Then add it to a week: + for a new week, or + project on an existing week.") +
+                "\nThe type only picks the starting .gitignore.")
+            .WithText("Name", first ? "unity-project" : "")
             .WithChoice("Type", [unity, dotnet]);
         dialog.Owner = this;
         dialog.Validate = d =>
@@ -891,7 +1034,9 @@ public partial class MainWindow : Window
         await RunAsync("Creating project", async () =>
         {
             await _session.Repos.InitRepoAsync(projects, dialog.Text, type);
-            SetStatus($"Created {dialog.Text}. Click + to create the first week.");
+            SetStatus(first
+                ? $"Created {dialog.Text}. Click + to create the first week."
+                : $"Added {dialog.Text}. Add it to a week with + or with + project on a week.");
         });
     }
 

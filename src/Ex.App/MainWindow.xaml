@@ -147,6 +147,8 @@
                             <TextBox x:Name="WeekTitleBox" Style="{StaticResource HeadingBox}" Margin="-11,2,0,0" LostFocus="OnWeekTextLostFocus"
                                      ToolTip="Click to edit the title" />
                             <TextBlock x:Name="WeekOriginText" Style="{StaticResource Muted}" Margin="0,2,0,0" />
+                            <!-- Projects of this week (filled in code; only when the course has more than one project) -->
+                            <WrapPanel x:Name="ProjectsRow" Margin="0,10,0,0" Visibility="Collapsed" />
 
                             <!-- Work card: only while working on this week -->
                             <Border x:Name="WorkPanel" Margin="0,20,0,0" CornerRadius="12" Padding="16,14" Visibility="Collapsed"
@@ -168,6 +170,8 @@
                                             <TextBlock x:Name="AllSavedText" Text="Everything is saved" Foreground="{DynamicResource TextMuted}"
                                                        VerticalAlignment="Center" />
                                         </WrapPanel>
+                                        <TextBlock x:Name="WorkProjectsText" FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
                                         <TextBlock x:Name="WorkHint" Style="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0" />
                                         <TextBlock x:Name="WorkWarning" Foreground="{DynamicResource Peach}" FontSize="12" Margin="0,6,0,0"
                                                    TextWrapping="Wrap" Visibility="Collapsed" />
@@ -238,6 +242,9 @@
                                                     <StackPanel VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="Medium" />
                                                         <TextBlock Text="{Binding Caption}" Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,2,0,0" />
+                                                        <TextBlock Text="{Binding ProjectsText}" Foreground="{DynamicResource Teal}" FontSize="11"
+                                                                   FontWeight="SemiBold" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"
+                                                                   Visibility="{Binding ShowProjects, Converter={StaticResource BoolToVisibility}}" />
                                                     </StackPanel>
                                                 </DockPanel>
                                             </Border>

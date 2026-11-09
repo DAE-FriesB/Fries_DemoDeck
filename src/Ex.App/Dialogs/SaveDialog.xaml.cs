@@ -12,14 +12,15 @@ public partial class SaveDialog : Window
 
     /// <param name="changes">Number of changed files.</param>
     /// <param name="nextStep">The step number to offer, or null when steps cannot be marked here.</param>
-    public SaveDialog(int changes, int? nextStep)
+    /// <param name="projects">With several projects in the week: their names, as "A and B".</param>
+    public SaveDialog(int changes, int? nextStep, string? projects = null)
     {
         InitializeComponent();
         _changes = changes;
         MessagePanel.Visibility = changes > 0 ? Visibility.Visible : Visibility.Collapsed;
-        ChangesText.Text = changes == 1 ? "1 changed file." : $"{changes} changed files.";
+        ChangesText.Text = (changes == 1 ? "1 changed file" : $"{changes} changed files") + (projects != null ? $" in {projects}." : ".");
         StepPanel.Visibility = nextStep != null ? Visibility.Visible : Visibility.Collapsed;
-        StepCheck.Content = $"Mark this as demo step {nextStep}";
+        StepCheck.Content = $"Mark this as demo step {nextStep}" + (projects != null ? $" in {projects}" : "");
         StepCheck.IsChecked = changes == 0;
         Loaded += (_, _) => (changes > 0 ? MessageText : StepTitleBox).Focus();
     }

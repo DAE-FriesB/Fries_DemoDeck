@@ -127,6 +127,38 @@ public class GitWorkflowTests
     }
 
     [Fact]
+    public async Task Two_projects_in_one_week_save_mark_steps_and_switch_together()
+    {
+        using var t = await TempCourse.CreateAsync();
+        var second = await t.Repos.InitRepoAsync(t.Session.Course.ProjectsPath, "console-app", ProjectType.DotNet);
+        await t.Session.RefreshAsync();
+        foreach (var repo in t.Session.States.ToList())
+            await t.Session.NewWeekAsync(repo, 1, "main", "Shared week");
+        await t.Session.RefreshAsync();
+
+        // Work in both projects, then one save that marks demo step 1
+        t.Write("Game.cs", "game");
+        File.WriteAllText(Path.Combine(second, "Program.cs"), "console");
+        await t.Session.RefreshAsync();
+        var working = t.Session.States.Where(s => s.CurrentBranch == "week01/solution").ToList();
+        Assert.Equal(2, working.Count);
+        Assert.Equal("week01/step-1", await t.Session.SaveWorkAsync(working, 1, "both projects", markAsStep: true, "Shared step"));
+
+        await t.Session.RefreshAsync();
+        Assert.All(t.Session.States, s => Assert.True(s.HasBranch("week01/step-1"), s.Name));
+        Assert.All(t.Session.States, s => Assert.False(s.IsDirty, s.Name));
+        var entry = t.Session.Weeks.Single(w => w.Id == "week01").Entries.Single(e => e.EntryId == "step-1");
+        Assert.Equal(["console-app", "test-repo"], entry.Repos.Order());
+        Assert.Equal(["console-app", "test-repo"], t.Session.Manifest.FindWeek("week01")!.Repos.Order());
+
+        // Open switches every project that has the branch
+        var report = await t.Session.SwitchPrepAsync("week01/start", null);
+        Assert.True(report.AllSucceeded);
+        await t.Session.RefreshAsync();
+        Assert.All(t.Session.States, s => Assert.Equal("week01/start", s.CurrentBranch));
+    }
+
+    [Fact]
     public async Task Detects_saves_on_an_older_step_that_later_steps_do_not_have()
     {
         using var t = await TwoWeeksAsync();

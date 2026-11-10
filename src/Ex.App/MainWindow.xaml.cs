@@ -108,6 +108,11 @@ public partial class MainWindow : Window
             var addProject = new MenuItem { Header = "Add project..." };
             addProject.Click += async (_, _) => await CreateProjectAsync();
             menu.Items.Add(addProject);
+
+            var stashes = _session.States.Sum(s => s.Stashes.Count);
+            var putAside = new MenuItem { Header = stashes == 0 ? "Put-aside changes..." : $"Put-aside changes ({stashes})..." };
+            putAside.Click += (_, _) => ShowStashes();
+            menu.Items.Add(putAside);
         }
         if (_settings.RecentFolders.Count > 0)
         {
@@ -443,6 +448,9 @@ public partial class MainWindow : Window
             ChangesButton.Content = changes == 1 ? "1 unsaved change" : $"{changes} unsaved changes";
             ChangesButton.Visibility = changes > 0 ? Visibility.Visible : Visibility.Collapsed;
             AllSavedText.Visibility = changes > 0 ? Visibility.Collapsed : Visibility.Visible;
+            var stashes = working.Sum(r => r.Stashes.Count);
+            StashesButton.Content = $"{stashes} put aside";
+            StashesButton.Visibility = stashes > 0 ? Visibility.Visible : Visibility.Collapsed;
             var entry = week.Entries.FirstOrDefault(en => en.BranchName == branch);
             var unsynced = entry?.Unsynced ?? 0;
             var hasLater = week.Entries.LastOrDefault() is { } lastEntry && lastEntry.BranchName != branch;
@@ -614,6 +622,17 @@ public partial class MainWindow : Window
         _changesWindow.Discarded += async () => await QuietRefreshAsync();
         _changesWindow.Closed += (_, _) => _changesWindow = null;
         _changesWindow.Show();
+    }
+
+    private void OnShowStashes(object sender, RoutedEventArgs e) => ShowStashes();
+
+    /// <summary>The changes put aside (git stash) in every project of the course: restore or drop them.</summary>
+    private void ShowStashes()
+    {
+        if (_session == null || _busy || IsDemo) return;
+        var window = new StashesWindow(_session.Repos, _session.States.Select(s => s.Path).ToList()) { Owner = this };
+        window.Changed += async () => await QuietRefreshAsync();
+        window.ShowDialog();
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)

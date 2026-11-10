@@ -352,6 +352,54 @@ public class GitWorkflowTests
     }
 
     [Fact]
+    public async Task Stash_list_shows_branch_and_files_and_restore_drops_it()
+    {
+        using var t = await TwoWeeksAsync();
+        var branch = (await t.StateAsync()).CurrentBranch;
+        t.Write("Program.cs", "work in progress");
+        t.Write("Untracked.cs", "new");
+        await t.Session.CleanAsync([await t.StateAsync()], CleanChoice.Stash, null);
+
+        var state = await t.StateAsync();
+        var stash = Assert.Single(state.Stashes);
+        Assert.Equal(branch, stash.Branch);
+        Assert.StartsWith(RepoService.StashPrefix, stash.Message);
+        Assert.NotNull(stash.Date);
+        var files = await t.Repos.ListStashFilesAsync(t.RepoPath, stash.Ref);
+        Assert.Contains(files, f => f.EndsWith("Program.cs"));
+        Assert.Contains(files, f => f.EndsWith("Untracked.cs"));
+
+        await t.Repos.RestoreStashAsync(t.RepoPath, stash.Ref);
+        Assert.Equal("work in progress", t.Read("Program.cs"));
+        Assert.True(t.Exists("Untracked.cs"));
+        Assert.Empty((await t.StateAsync()).Stashes);
+    }
+
+    [Fact]
+    public async Task Restore_keeps_the_stash_when_it_does_not_apply()
+    {
+        using var t = await TwoWeeksAsync();
+        t.Write("Untracked.cs", "stashed");
+        await t.Session.CleanAsync([await t.StateAsync()], CleanChoice.Stash, null);
+        t.Write("Untracked.cs", "in the way");
+        var stash = Assert.Single((await t.StateAsync()).Stashes);
+        await Assert.ThrowsAnyAsync<Exception>(() => t.Repos.RestoreStashAsync(t.RepoPath, stash.Ref));
+        Assert.Single((await t.StateAsync()).Stashes);
+    }
+
+    [Theory]
+    [InlineData("On week02/solution: prep-autosave 2026-11-09 10:00:00", "week02/solution", "prep-autosave 2026-11-09 10:00:00")]
+    [InlineData("WIP on main: abc1234 Initial commit", "main", "abc1234 Initial commit")]
+    [InlineData("On (no branch): message", null, "message")]
+    [InlineData("something else", null, "something else")]
+    public void Stash_subject_is_parsed(string subject, string? branch, string message)
+    {
+        var stash = StashInfo.Parse("stash@{0}", subject);
+        Assert.Equal(branch, stash.Branch);
+        Assert.Equal(message, stash.Message);
+    }
+
+    [Fact]
     public async Task Export_and_check()
     {
         using var t = await TwoWeeksAsync();

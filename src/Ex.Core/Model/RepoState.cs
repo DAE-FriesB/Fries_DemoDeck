@@ -44,6 +44,9 @@ public sealed class RepoState
 
     public bool IsDirty => Status.Count > 0;
 
+    /// <summary>Changes that were put aside (git stash), newest first.</summary>
+    public IReadOnlyList<Services.StashInfo> Stashes { get; init; } = [];
+
     public bool IsUnityProject => File.Exists(System.IO.Path.Combine(Path, "ProjectSettings", "ProjectVersion.txt"));
 
     /// <summary>Unity writes this lock file while the project is open in the Editor.</summary>

@@ -5,7 +5,22 @@ namespace Ex.Core.Services;
 
 public sealed record CommitInfo(string Id, string ShortId, string Subject, string Date);
 
-public sealed record StashInfo(string Ref, string Message);
+/// <summary>
+/// One entry of <c>git stash list</c>. <see cref="Ref"/> is <c>stash@{n}</c>: it shifts when an older entry is dropped,
+/// so re-read the list after every change. <see cref="Branch"/> is the branch it was made on (null when detached).
+/// </summary>
+public sealed record StashInfo(string Ref, string Message, string? Branch = null, DateTimeOffset? Date = null)
+{
+    /// <summary>Parses the reflog subject: "On &lt;branch&gt;: &lt;message&gt;" or "WIP on &lt;branch&gt;: &lt;sha&gt; &lt;subject&gt;".</summary>
+    public static StashInfo Parse(string stashRef, string subject, DateTimeOffset? date = null)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(subject, @"^(?:WIP on|On) (.+?): (.*)$");
+        if (!match.Success)
+            return new StashInfo(stashRef, subject, null, date);
+        var branch = match.Groups[1].Value;
+        return new StashInfo(stashRef, match.Groups[2].Value, branch == "(no branch)" ? null : branch, date);
+    }
+}
 
 public sealed record TreeFile(string Path, long Size);
 
@@ -48,6 +63,7 @@ public sealed class RepoService(GitRunner git)
             IsEmpty = !hasCommits,
             Branches = branches,
             Status = entries,
+            Stashes = hasCommits ? await ListStashesAsync(path) : [],
         };
     }
 
@@ -151,15 +167,38 @@ public sealed class RepoService(GitRunner git)
 
     public async Task<IReadOnlyList<StashInfo>> ListStashesAsync(string path)
     {
-        var result = await Git.QueryAsync(path, "stash", "list", "--format=%gd%x09%gs");
+        var result = await Git.QueryAsync(path, "stash", "list", "--format=%gd%x09%cI%x09%gs");
         return result.Lines
-            .Select(l => l.Split('\t', 2))
-            .Where(p => p.Length == 2)
-            .Select(p => new StashInfo(p[0], p[1]))
+            .Select(l => l.Split('\t', 3))
+            .Where(p => p.Length == 3)
+            .Select(p => StashInfo.Parse(p[0], p[2], DateTimeOffset.TryParse(p[1], out var d) ? d : null))
             .ToList();
     }
 
+    /// <summary>The files in a stash, including the untracked ones it carries, as "&lt;status&gt;\t&lt;path&gt;" lines.</summary>
+    public async Task<IReadOnlyList<string>> ListStashFilesAsync(string path, string stashRef)
+    {
+        var result = await Git.QueryAsync(path, "stash", "show", "--name-status", "--include-untracked", stashRef);
+        if (!result.Success)
+            result = await Git.QueryAsync(path, "stash", "show", "--name-status", stashRef); // git older than 2.32
+        return result.Lines;
+    }
+
     public Task ApplyStashAsync(string path, string stashRef) => Git.RunCheckedAsync(path, "stash", "apply", stashRef);
+
+    /// <summary>
+    /// Brings a stash back into the working folder and removes it from the list, but only when it applied cleanly.
+    /// When applying fails (a conflict, files in the way) the stash is kept and a <see cref="GitException"/> is thrown.
+    /// </summary>
+    public async Task RestoreStashAsync(string path, string stashRef)
+    {
+        // Resolve first: dropping by stash@{n} after the apply must hit the same entry.
+        var id = await ResolveAsync(path, stashRef) ?? throw new InvalidOperationException($"{stashRef} does not exist.");
+        await ApplyStashAsync(path, stashRef);
+        var current = (await ListStashesAsync(path)).FirstOrDefault(s => s.Ref == stashRef);
+        if (current != null && await ResolveAsync(path, current.Ref) == id)
+            await DropStashAsync(path, current.Ref);
+    }
 
     public Task DropStashAsync(string path, string stashRef) => Git.RunCheckedAsync(path, "stash", "drop", stashRef);
 

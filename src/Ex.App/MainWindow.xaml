@@ -169,6 +169,9 @@
                                                     ToolTip="Show the changed files" />
                                             <TextBlock x:Name="AllSavedText" Text="Everything is saved" Foreground="{DynamicResource TextMuted}"
                                                        VerticalAlignment="Center" />
+                                            <Button x:Name="StashesButton" Style="{StaticResource PillButton}" Click="OnShowStashes"
+                                                    Margin="10,0,0,0" Background="{DynamicResource Bg2}" Foreground="{DynamicResource TextSecondary}"
+                                                    Visibility="Collapsed" ToolTip="Changes you put aside: restore or drop them" />
                                         </WrapPanel>
                                         <TextBlock x:Name="WorkProjectsText" FontSize="12" Foreground="{DynamicResource TextSecondary}"
                                                    Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed" />

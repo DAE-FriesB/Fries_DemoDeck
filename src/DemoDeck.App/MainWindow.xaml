@@ -243,7 +243,23 @@
                                                         <TextBlock Text="You are here" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="SemiBold" />
                                                     </Border>
                                                     <StackPanel VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="Medium" />
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Visibility="{Binding ShowLabel, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
+                                                            <Button Style="{StaticResource GhostButton}" Margin="6,0,0,0" Padding="6,0" MinHeight="24"
+                                                                    VerticalAlignment="Center" Click="OnRenameStep" ToolTip="Rename this step"
+                                                                    Visibility="{Binding ShowRename, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                        <DockPanel Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock DockPanel.Dock="Left" Text="{Binding StepPrefix}" FontSize="14" FontWeight="Medium"
+                                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                            <TextBox Text="{Binding EditTitle, Mode=OneWay}" FontSize="14" Padding="6,3" MinWidth="200"
+                                                                     ToolTip="Enter to save, Esc to cancel. Leave empty to remove the name."
+                                                                     Loaded="OnStepTitleBoxLoaded" KeyDown="OnStepTitleBoxKeyDown"
+                                                                     LostFocus="OnStepTitleBoxLostFocus" />
+                                                        </DockPanel>
                                                         <TextBlock Text="{Binding Caption}" Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,2,0,0" />
                                                         <TextBlock Text="{Binding ProjectsText}" Foreground="{DynamicResource Teal}" FontSize="11"
                                                                    FontWeight="SemiBold" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"

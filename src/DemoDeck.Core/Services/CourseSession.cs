@@ -163,6 +163,17 @@ public sealed class CourseSession
         Save();
     }
 
+    /// <summary>Sets (or clears, with an empty title) the title of a demo step in exercises.yaml. Returns the week entry.</summary>
+    public WeekEntry RenameStep(string weekId, string stepId, string? title)
+    {
+        var entry = Manifest.GetOrAddWeek(weekId);
+        var stepEntry = entry.GetOrAddStep(stepId);
+        stepEntry.Title = string.IsNullOrWhiteSpace(title) ? null : title.Trim();
+        entry.Steps.Sort((a, b) => StepNumber(a.Id).CompareTo(StepNumber(b.Id)));
+        Save();
+        return entry;
+    }
+
     /// <summary>
     /// Saves the work of a week: commits the changes (when there are any) in every given repo and, when
     /// <paramref name="markAsStep"/> is set, marks the result as the next demo step (<c>weekNN/step-N</c>).

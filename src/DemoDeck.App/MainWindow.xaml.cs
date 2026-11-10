@@ -23,10 +23,12 @@ public sealed record WeekRow(string Id, string Name, string Title, string Summar
 public sealed record StepRow(
     string Branch, string Label, string Caption, bool IsCurrent, bool ShowOpen, Cursor? CardCursor,
     Brush NodeBrush, Brush NodeSoft, Brush CardBrush, bool HasLineAbove, bool HasLineBelow, int Unsynced, bool IsDemo,
-    string ProjectsText = "")
+    string ProjectsText = "", string StepPrefix = "", string EditTitle = "", bool CanRename = false, bool IsEditing = false)
 {
     /// <summary>Which projects have this step; only shown when the course has more than one project.</summary>
     public bool ShowProjects => ProjectsText.Length > 0;
+    public bool ShowLabel => !IsEditing;
+    public bool ShowRename => CanRename && !IsEditing;
     public bool ShowUnsynced => Unsynced > 0 && !IsDemo;
     public string UnsyncedText => Unsynced == 1 ? "1 save not in later steps" : $"{Unsynced} saves not in later steps";
 }
@@ -48,6 +50,8 @@ public partial class MainWindow : Window
     private bool _refreshPending;
     private ChangesWindow? _changesWindow;
     private readonly Updates _updates = new();
+    /// <summary>Branch of the step whose title is being edited (Preparation only), or null.</summary>
+    private string? _renamingStep;
 
     public MainWindow()
     {
@@ -351,8 +355,9 @@ public partial class MainWindow : Window
 
     private void OnWeekSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (!_suppressSelection)
-            ShowSelectedWeek();
+        if (_suppressSelection) return;
+        _renamingStep = null;
+        ShowSelectedWeek();
     }
 
     private async void OnNewWeek(object sender, RoutedEventArgs e)
@@ -396,21 +401,30 @@ public partial class MainWindow : Window
         var current = CurrentBranches();
         var last = week.Entries.Count - 1;
         var manyProjects = _session.States.Count > 1;
-        StepList.ItemsSource = week.Entries.Select((e, i) =>
+        if (demo || week.Entries.All(e => e.BranchName != _renamingStep))
+            _renamingStep = null;
+        // While a step title is being typed, an automatic refresh must not rebuild the cards (that would drop the text).
+        if (_renamingStep == null)
         {
-            var isCurrent = current.Contains(e.BranchName);
-            var (label, caption, color) = e.EntryId switch
+            StepList.ItemsSource = week.Entries.Select((e, i) =>
             {
-                "start" => ("Start", "What students start from", "Teal"),
-                "solution" => ("Solution", demo ? "The finished exercise" : "The finished exercise. This is where you work.", "Coral"),
-                _ => ($"Step {e.EntryId[5..]}" + (string.IsNullOrWhiteSpace(e.Title) ? "" : $"  ·  {e.Title}"), "Demo point to jump to in class", "Sand"),
-            };
-            var soft = color == "Sand" ? "SandSoft" : color == "Teal" ? "TealSoft" : "CoralSoft";
-            return new StepRow(e.BranchName, label, caption, isCurrent, !isCurrent && !demo,
-                demo && !isCurrent ? Cursors.Hand : null,
-                Res(color), Res(soft), Res(isCurrent ? "Bg2" : "Bg1"), i > 0, i < last, e.Unsynced, demo,
-                manyProjects ? string.Join("  ·  ", e.Repos) : "");
-        }).ToList();
+                var isCurrent = current.Contains(e.BranchName);
+                var isStep = e.EntryId.StartsWith("step-");
+                var prefix = isStep ? $"Step {e.EntryId[5..]}" : "";
+                var (label, caption, color) = e.EntryId switch
+                {
+                    "start" => ("Start", "What students start from", "Teal"),
+                    "solution" => ("Solution", demo ? "The finished exercise" : "The finished exercise. This is where you work.", "Coral"),
+                    _ => (prefix + (string.IsNullOrWhiteSpace(e.Title) ? "" : $"  ·  {e.Title}"), "Demo point to jump to in class", "Sand"),
+                };
+                var soft = color == "Sand" ? "SandSoft" : color == "Teal" ? "TealSoft" : "CoralSoft";
+                return new StepRow(e.BranchName, label, caption, isCurrent, !isCurrent && !demo,
+                    demo && !isCurrent ? Cursors.Hand : null,
+                    Res(color), Res(soft), Res(isCurrent ? "Bg2" : "Bg1"), i > 0, i < last, e.Unsynced, demo,
+                    manyProjects ? string.Join("  ·  ", e.Repos) : "",
+                    prefix, e.Title ?? "", isStep && !demo, false);
+            }).ToList();
+        }
 
         if (demo)
         {
@@ -678,6 +692,69 @@ public partial class MainWindow : Window
     }
 
     private static string? NullIfEmpty(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+    // ---- renaming a step -------------------------------------------------------------------
+
+    /// <summary>Pencil button on a step card: swaps the name for a text field.</summary>
+    private void OnRenameStep(object sender, RoutedEventArgs e)
+    {
+        if (IsDemo || (sender as FrameworkElement)?.DataContext is not StepRow row
+            || StepList.ItemsSource is not IEnumerable<StepRow> rows) return;
+        StepList.ItemsSource = rows.Select(r => r with { IsEditing = r.Branch == row.Branch }).ToList();
+        _renamingStep = row.Branch;
+    }
+
+    private void OnStepTitleBoxLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox { IsVisible: true } box)
+        {
+            box.Focus();
+            box.SelectAll();
+        }
+    }
+
+    private void OnStepTitleBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box) return;
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            CommitStepRename(box);
+        }
+        else if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            _renamingStep = null;
+            ShowSelectedWeek();
+        }
+    }
+
+    private void OnStepTitleBoxLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox box)
+            CommitStepRename(box);
+    }
+
+    /// <summary>Stores the typed title in exercises.yaml (an empty title removes it). Branches are not renamed.</summary>
+    private void CommitStepRename(TextBox box)
+    {
+        if (_renamingStep is not { } branch || box.DataContext is not StepRow row || row.Branch != branch) return;
+        _renamingStep = null;
+        if (_session != null && !IsDemo && SelectedWeek is { } week
+            && week.Entries.FirstOrDefault(en => en.BranchName == branch) is { } entry)
+        {
+            var title = NullIfEmpty(box.Text);
+            if (title != NullIfEmpty(entry.Title ?? ""))
+            {
+                week.Manifest = _session.RenameStep(week.Id, entry.EntryId, title);
+                entry.Title = title;
+                SetStatus(title == null
+                    ? $"Removed the name of step {entry.EntryId[5..]} of {WeekName(week)}."
+                    : $"Renamed step {entry.EntryId[5..]} of {WeekName(week)} to \"{title}\".");
+            }
+        }
+        ShowSelectedWeek();
+    }
 
     // ---- Propagate -------------------------------------------------------------------------
 

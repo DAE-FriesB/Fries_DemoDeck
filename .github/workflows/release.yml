@@ -31,7 +31,7 @@ jobs:
         run: dotnet test -c Release
 
       - name: Publish
-        run: dotnet publish src/Ex.App -c Release -r win-x64 --self-contained true -p:Version=${{ env.VERSION }} -o artifacts/publish
+        run: dotnet publish src/DemoDeck.App -c Release -r win-x64 --self-contained true -p:Version=${{ env.VERSION }} -o artifacts/publish
 
       - name: Restore vpk
         run: dotnet tool restore
@@ -47,10 +47,10 @@ jobs:
           --packId FriesDemoDeck
           --packVersion ${{ env.VERSION }}
           --packDir artifacts/publish
-          --mainExe Ex.App.exe
-          --packTitle "Fries' Demo Deck"
+          --mainExe DemoDeck.exe
+          --packTitle "DemoDeck"
           --packAuthors FriesBoury
-          --icon src/Ex.App/Assets/app.ico
+          --icon src/DemoDeck.App/Assets/app.ico
           --outputDir artifacts/releases
 
       - name: Upload to the GitHub release
@@ -59,6 +59,6 @@ jobs:
           --repoUrl https://github.com/${{ github.repository }}
           --token ${{ secrets.GITHUB_TOKEN }}
           --publish
-          --releaseName "Fries' Demo Deck ${{ env.VERSION }}"
+          --releaseName "DemoDeck ${{ env.VERSION }}"
           --tag ${{ github.ref_name }}
           --outputDir artifacts/releases

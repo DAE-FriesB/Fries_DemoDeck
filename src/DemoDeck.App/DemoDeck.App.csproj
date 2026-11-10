@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DemoDeck.Core\DemoDeck.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- The exe is DemoDeck.exe; the namespaces stay DemoDeck.App. -->
+    <AssemblyName>DemoDeck</AssemblyName>
+    <RootNamespace>DemoDeck.App</RootNamespace>
+    <!-- Generated from Themes/AppIcon.xaml by tools/IconGen. Windows without their own Icon use it too. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyTitle>DemoDeck</AssemblyTitle>
+    <Product>DemoDeck</Product>
+    <!-- Release builds pass the tag's version (-p:Version=...); this is the fallback for local builds. -->
+    <Version>0.1.0</Version>
+    <!-- Program.Main runs the Velopack hook before WPF starts (install/update/uninstall events). -->
+    <StartupObject>DemoDeck.App.Program</StartupObject>
+    <Authors>FriesBoury</Authors>
+  </PropertyGroup>
+
+</Project>

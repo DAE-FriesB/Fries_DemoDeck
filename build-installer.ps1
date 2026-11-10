@@ -1,4 +1,4 @@
-# Builds the Velopack installer locally (the same steps as .github/workflows/release.yml, without uploading).
+﻿# Builds the Velopack installer locally (the same steps as .github/workflows/release.yml, without uploading).
 #
 #   .\build-installer.ps1 0.1.0
 #
@@ -21,17 +21,17 @@ if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
 dotnet tool restore
 if ($LASTEXITCODE) { throw 'dotnet tool restore failed' }
 
-dotnet publish src\Ex.App -c Release -r win-x64 --self-contained true -p:Version=$Version -o $publish
+dotnet publish src\DemoDeck.App -c Release -r win-x64 --self-contained true -p:Version=$Version -o $publish
 if ($LASTEXITCODE) { throw 'dotnet publish failed' }
 
 dotnet vpk pack `
     --packId FriesDemoDeck `
     --packVersion $Version `
     --packDir $publish `
-    --mainExe Ex.App.exe `
-    --packTitle "Fries' Demo Deck" `
+    --mainExe DemoDeck.exe `
+    --packTitle "DemoDeck" `
     --packAuthors FriesBoury `
-    --icon src\Ex.App\Assets\app.ico `
+    --icon src\DemoDeck.App\Assets\app.ico `
     --outputDir $releases
 if ($LASTEXITCODE) { throw 'vpk pack failed' }
 

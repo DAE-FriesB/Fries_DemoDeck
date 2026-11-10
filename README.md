@@ -1,4 +1,4 @@
-# Fries' Demo Deck
+# DemoDeck
 
 A Windows desktop app for teachers who build programming exercises step by step and demo them in class.
 Each exercise lives in git: one branch per week (`weekNN/start` → `weekNN/solution`) and optional snapshot branches
@@ -22,7 +22,7 @@ Requires [Git for Windows](https://git-scm.com/download/win) on the PATH.
 ## Using it
 
 1. **Open course** and choose a course folder: a folder with an `exercises.yaml` file and a `Projects\` folder next to
-   it. The app offers to create both. Recent folders are remembered in `%APPDATA%\ExercisesPipeline\settings.json`.
+   it. The app offers to create both. Recent folders are remembered in `%APPDATA%\DemoDeck\settings.json`.
 2. With no project yet, **Create project** makes a git repository in `Projects\` (README, `.gitignore`,
    `.gitattributes` on `main`). The type (Unity or .NET) only picks the starting `.gitignore`; for any other kind of
    project, pick either and replace the `.gitignore` with your own in the first week.
@@ -85,25 +85,25 @@ The `.gitignore` decides what the app treats as your work, so set it up before t
 
 ```
 dotnet build
-dotnet run --project src/Ex.App
+dotnet run --project src/DemoDeck.App
 dotnet test
 ```
 
 Requires the .NET 10 SDK and Git for Windows.
 
 ```
-ExercisesPipeline.sln
-  src/Ex.Core/          class library: git runner, repo scanner, YAML, actions, checks (no UI code)
-  src/Ex.App/           the WPF client
-  tests/Ex.Core.Tests/  xUnit tests; most run real git commands in a temp folder
+DemoDeck.sln
+  src/DemoDeck.Core/          class library: git runner, repo scanner, YAML, actions, checks (no UI code)
+  src/DemoDeck.App/           the WPF client
+  tests/DemoDeck.Core.Tests/  xUnit tests; most run real git commands in a temp folder
   tools/IconGen/        renders the app icon into the .ico file
 ```
 
-The app icon is drawn once in `src/Ex.App/Themes/AppIcon.xaml` (also used inside the app). After changing it,
+The app icon is drawn once in `src/DemoDeck.App/Themes/AppIcon.xaml` (also used inside the app). After changing it,
 regenerate the `.ico` used for the exe, taskbar and title bars:
 
 ```
-dotnet run --project tools/IconGen -- src/Ex.App/Themes/AppIcon.xaml src/Ex.App/Assets/app.ico
+dotnet run --project tools/IconGen -- src/DemoDeck.App/Themes/AppIcon.xaml src/DemoDeck.App/Assets/app.ico
 ```
 
 ## Releasing (installer and updates via Velopack)

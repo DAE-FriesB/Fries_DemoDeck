@@ -1,6 +1,6 @@
 // Renders the "AppIcon" DrawingImage from a XAML resource dictionary into a multi-size .ico (PNG entries).
 //
-//   dotnet run --project tools/IconGen -- src/Ex.App/Themes/AppIcon.xaml src/Ex.App/Assets/app.ico
+//   dotnet run --project tools/IconGen -- src/DemoDeck.App/Themes/AppIcon.xaml src/DemoDeck.App/Assets/app.ico
 //
 // Also writes <name>-256.png next to the .ico for previewing.
 
